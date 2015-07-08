@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+  <meta charset="UTF-8">
+  <script src="js/socket.io.js"></script>
+  <title>reciever</title>
+</head>
+<body>
+<div id="container">
+
+  <video id="video" autoplay></video>
+
+  <script>
+      navigator.getUserMedia =navigator.getUserMedia ||navigator.webkitGetUserMedia ||navigator.mozGetUserMedia ||navigator.msGetUserMedia;
+      window.peerConnection = (window.PeerConnection || window.webkitPeerConnection00 ||window.webkitRTCPeerConnection ||window.mozRTCPeerConnection);
+      var sessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription ||window.webkitRTCSessionDescription || window.msRTCSessionDescription;
+      window.RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription;
+      window.RTCIceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate || window.webkitRTCIceCandidate || window.msRTCIceCandidate;
+      window.URL = window.URL ||window.webkitURL;
+      var pc = new peerConnection({
+              iceServers: [
+                  {url: "stun:stun.l.google.com:19302"},
+              ]
+      });
+      pc.onaddstream = function(event){
+          console.log('addstream',arguments);
+          document.getElementById("video").src = URL.createObjectURL(event.stream);
+      };
+      socket = io.connect("http://172.16.21.53:8889", {});
+      socket.on('data', function (data) {
+        console.log(data);
+      });
+
+      socket.on('error', function(){
+        console.log('socket error', arguments);
+      });
+      socket.on('candidate', function(data){
+        pc.addIceCandidate(new RTCIceCandidate(data));
+      });
+      socket.on('connect', function(){
+
+        socket.emit('type', 'receiver');
+        console.log("已链接");
+
+        console.log(socket);
+        socket.on('message', function(data){
+          console.log('message', data);
+          pc.setRemoteDescription(new RTCSessionDescription(data[1]),
+            function(){
+                console.log('answer');
+                pc.createAnswer(function(desc){
+                    console.log(desc);
+                    socket.emit("message", ['sender', desc]);
+                })
+            },function(){
+                console.log("failure",arguments);
+            }
+          );
+        });
+      });
+
+
+      console.log(pc);
+</script>
+</div>
+</body>
+</html>

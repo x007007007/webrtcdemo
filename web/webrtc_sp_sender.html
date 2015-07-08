@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="js/simplewebrtc.bundle.js"></script>
+    </head>
+    <body>
+        <video height="300" id="localVideo"></video>
+        <div id="remotesVideos"></div>
+    </body>
+<script>
+  var webrtc = new SimpleWebRTC({
+  localVideoEl: 'localVideo',
+  autoRequestMedia: true
+});
+webrtc.on('readyToCall', function () {
+    webrtc.joinRoom('atatest');
+});
+</script>
+</html>

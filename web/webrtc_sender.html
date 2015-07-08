@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+  <meta charset="UTF-8">
+  <title>sender</title>
+  <script src="socket.io.js"></script>
+</head>
+<body>
+<div id="container">
+
+  <video id="video" autoplay></video>
+
+  <script>
+    navigator.getUserMedia =navigator.getUserMedia ||navigator.webkitGetUserMedia ||navigator.mozGetUserMedia ||navigator.msGetUserMedia;
+    window.peerConnection = (window.PeerConnection || window.webkitPeerConnection00 ||window.webkitRTCPeerConnection ||window.mozRTCPeerConnection);
+    var sessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription ||window.webkitRTCSessionDescription || window.msRTCSessionDescription;
+    window.URL = window.URL ||window.webkitURL;
+    window.RTCIceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate || window.webkitRTCIceCandidate || window.msRTCIceCandidate;
+    window.RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription;
+    var pc = new peerConnection({
+      iceServers: [
+        {"url": "stun:23.21.150.121"},
+        {"url": "stun:stun.services.mozilla.com" },
+        {"url": "stun:stun.l.google.com:19302"},
+        {"url": "turn:numb.viagenie.ca", credential: "webrtcdemo", username: "louis%40mozilla.com"}
+      ]
+    }), constraints = {
+      audio: true,
+      video: true
+    },
+
+
+    socket = io.connect("http://172.16.21.53:8889", {});
+    pc_ices = [];
+    pc_ices.send = function(){};
+    pc.onicecandidate = function(event){
+      pc_ices.push([true, event.candidate]);
+      pc_ices.send();
+    };
+    pc_ices.sender = function(){
+      for(var i=0;pc_ices.length>i;i++){
+        if(pc_ices[i][0]){
+          console.debug('message', ["sender_ice", pc_ices[i][1]]);
+          socket.emit('message', ["sender_ice", pc_ices[i][1]]);
+          pc_ices[i][0] = false;
+        }
+      }
+    };
+    navigator.getUserMedia(constraints,
+      function(stream) {
+        window.stream = stream;
+        pc.addStream(stream);
+        var vt = stream.getVideoTracks();
+        vt.onaddtrack = function(e){console.log(e)};
+        vt.onremovetrack = function(e){console.log(e)};
+        vt = vt[0];
+        var video = document.querySelector("video");
+        try {
+          video.src = window.URL.createObjectURL(stream);
+        } catch(e) {
+          try {
+            video.src = stream;
+            video.play();
+          } catch(e){
+            console.log("Error setting video src: ", e);
+          }
+        }
+        pc.createOffer(function(desc){
+            pc.setLocalDescription(desc, function(){
+              socket.emit("message",["receiver", desc]); //如果中途退出
+            },function(){
+              console.log("loscalset error", arguments);
+            })
+          },function(){
+            console.log("Offererror", arguments);
+        });
+      }, function(error) {
+        console.log("navigator.getUserMedia error: ", error);
+    });
+
+    socket.on('connect', function(){
+      console.log("已链接");
+      pc_ices.send = pc_ices.sender;
+      pc_ices.sender();
+    })
+
+    socket.on('message', function(data){
+      console.log('message', data);
+
+      pc.setRemoteDescription(new RTCSessionDescription(data[1]));
+    });
+
+
+console.log(pc);
+</script>
+</div>
+</body>
+</html>
