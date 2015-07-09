@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+  <meta charset="UTF-8">
+  <title></title>
+</head>
+<body>
+测试是getUserMedia是否可以都为空
+<script>
+  navigator.getUserMedia =navigator.getUserMedia ||navigator.webkitGetUserMedia ||navigator.mozGetUserMedia ||navigator.msGetUserMedia;
+  window.PeerConnection = (window.PeerConnection || window.webkitPeerConnection00 ||window.webkitRTCPeerConnection ||window.mozRTCPeerConnection);
+
+  navigator.getUserMedia({video:false, audio:false},
+    function(stream){
+        console.log(stream);
+    },function(){
+        console.log(arguments);
+    }
+  )
+
+</script>
+</body>
+</html>

@@ -2,9 +2,34 @@
 <html>
 <head lang="en">
   <meta charset="UTF-8">
-  <title></title>
+  <title>test1</title>
+  <script src="http://cdn.peerjs.com/0.3/peer.js"></script>
 </head>
 <body>
+  <video id="video"></video>
+<script language="JavaScript">
+  navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+  window.URL = window.URL ||window.webkitURL;
+  window.RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription ||window.webkitRTCSessionDescription || window.msRTCSessionDescription;
+  window.RTCIceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate || window.webkitRTCIceCandidate || window.msRTCIceCandidate;
 
+  peer = new Peer({ key: '44cn1jyeox14te29', debug: 3, config: {'iceServers': [
+      { url: 'stun:stun.l.google.com:19302' } // Pass in optional STUN and TURN server for maximum network compatibility
+    ]}});
+
+  conn = peer.connect('test2');
+  conn.on('open', function(){
+    conn.send('hi!');
+  });
+
+  navigator.getUserMedia({video: true, audio: true}, function(stream) {
+    var call = peer.call('another-peers-id', stream);
+    call.on('stream', function(remoteStream) {
+        // Show stream in some video/canvas element.
+      });
+    }, function(err) {
+      console.log('Failed to get local stream' ,err);
+  });
+</script>
 </body>
 </html>

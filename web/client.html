@@ -1,0 +1,92 @@
+<html>
+<head>
+  <title>PeerJS - Client side</title>
+  <script type="text/javascript" src="js/jquery-1.8.3.min.js"></script>
+  <script type="text/javascript" src="js/peer.js"></script>
+  <script>
+    var URL = window.URL ||window.webkitURL;
+    // Compatibility shim
+    navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+
+    // PeerJS object
+    var peer = new Peer("tester", { key: 'lwjd5qra8257b9', debug: 3, config: {'iceServers': [
+      { url: 'stun:stun.l.google.com:19302' } // Pass in optional STUN and TURN server for maximum network compatibility
+    ]}});
+
+    peer.on('open', function(){
+      $('#my-id').text(peer.id);
+    });
+
+    peer.on('error', function(err){
+      alert(err.message);
+    });
+    peer.on('call', function(){
+        console.log('call', arguments);
+    })
+    peer.on('connection', function(conn){
+       //call monitor 
+        peer.call(conn.peer, window.localStream);
+    });
+    peer.on('disconnected', function() {
+        console.log('disconnected',arguments);
+        peer.reconnect();
+    });
+
+    init();
+
+    function init () {
+      // Get audio/video stream
+      navigator.getUserMedia({audio: true, video: true}, function(stream){
+        // Set your video displays
+        $('#my-video').prop('src', URL.createObjectURL(stream));
+
+        window.localStream = stream;
+        console.log(stream);
+      }, function(){ });
+    }
+
+    $(function(){
+      var canvas = document.getElementById("drawCanvas");
+      var ctx = canvas.getContext("2d");
+      var old = ""
+      setInterval(function(){
+          ctx.drawImage($('#my-video')[0], 0, 0);
+          console.log(ctx, canvas);
+          if( old === canvas.toDataURL("image/png")){
+            console.log("something warning");
+          }
+          old = canvas.toDataURL("image/png");
+
+         /* $.ajax({
+            type: "POST",
+            url: "test",
+            data: {
+                imgBase64: canvas.toDataURL("image/png")
+            }
+          }).done(function(o) {
+                console.log('saved');
+          }); */
+      }, 5000)
+
+    })
+
+  </script>
+
+
+</head>
+
+<body>
+  <canvas id="drawCanvas" class="hide" height="480" width="640"></canvas>
+  <div class="pure-g">
+
+      <!-- Video area -->
+      <div class="pure-u-2-3" id="video-container">
+        <video id="my-video" muted="true" autoplay></video>
+      </div>
+      <div id="my-id"></div>
+
+  </div>
+
+
+</body>
+</html>
